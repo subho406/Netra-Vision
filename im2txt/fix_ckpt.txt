@@ -1,0 +1,64 @@
+A few people are having trouble using @psycharo 's trained checkpoint since the release of TF 1.0. Here are the steps you can follow.
+
+Upgrade to the latest version of TensorFlow and fetch the latest version of this repository.
+
+Firstly the word_counts.txt file provided above was generated with Python 3, so it wrote all the words like this: b'word'. You may need to rewrite that file. The following code worked for me on Python 
+2.7; you may have to tweak if you are using something different.
+
+OLD_VOCAB_FILE = "word_counts.txt"
+NEW_VOCAB_FILE = "word_counts2.txt"
+
+with open(OLD_VOCAB_FILE) as f:
+  lines = list(f.readlines())
+
+def clean_line(line):
+  tokens = line.split()
+  return "%s %s" % (eval(tokens[0]), tokens[1])
+
+newlines = [clean_line(line) for line in lines]
+
+with open(NEW_VOCAB_FILE, "w") as f:
+  for line in newlines:
+    f.write(line + "\n")
+
+Now we need to rename 2 of the variables in the checkpoint file.
+
+OLD_CHECKPOINT_FILE = ".../model.ckpt-2000000"
+NEW_CHECKPOINT_FILE = ".../model.ckpt-2000000"
+
+import tensorflow as tf
+vars_to_rename = {
+    "lstm/BasicLSTMCell/Linear/Matrix": "lstm/basic_lstm_cell/weights",
+    "lstm/BasicLSTMCell/Linear/Bias": "lstm/basic_lstm_cell/biases",
+}
+new_checkpoint_vars = {}
+reader = tf.train.NewCheckpointReader(OLD_CHECKPOINT_FILE)
+for old_name in reader.get_variable_to_shape_map():
+  if old_name in vars_to_rename:
+    new_name = vars_to_rename[old_name]
+  else:
+    new_name = old_name
+  new_checkpoint_vars[new_name] = tf.Variable(reader.get_tensor(old_name))
+
+init = tf.global_variables_initializer()
+saver = tf.train.Saver(new_checkpoint_vars)
+
+with tf.Session() as sess:
+  sess.run(init)
+  saver.save(sess, NEW_CHECKPOINT_FILE)
+Now it should work!
+
+CHECKPOINT_PATH=".../model-renamed.ckpt-2000000"
+VOCAB_FILE=".../word_counts2.txt"
+IMAGE_FILE=".../COCO_val2014_000000224477.jpg"
+
+# Build the inference binary.
+bazel build -c opt im2txt/run_inference
+
+# Run inference to generate captions.
+bazel-bin/im2txt/run_inference \
+  --checkpoint_path=${CHECKPOINT_PATH} \
+  --vocab_file=${VOCAB_FILE} \
+  --input_files=${IMAGE_FILE}
+ +1 20 tada 2 heart 9  
+
