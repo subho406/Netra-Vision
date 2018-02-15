@@ -1,0 +1,8 @@
+dependencies:
+  - python=3.4
+  - numpy
+  - nltk
+  - matplotlib
+  - pandas
+  - pip:
+    - tensorflow-gpu
