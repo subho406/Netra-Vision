@@ -11,4 +11,4 @@ Full text available at: http://arxiv.org/abs/1609.06647
 ## Running the Inference
 ```
 sh run_inference.sh
-'''
+```
