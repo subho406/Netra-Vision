@@ -99,7 +99,7 @@ class InferenceWrapperBase(object):
 
     return _restore_fn
 
-  def build_graph_from_config(self, model_config, checkpoint_path):
+  def build_graph_from_config(self, model_config: object, checkpoint_path: object) -> object:
     """Builds the inference graph from a configuration object.
 
     Args:
